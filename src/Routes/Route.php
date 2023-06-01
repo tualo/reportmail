@@ -73,7 +73,7 @@ class Route implements IRoute
 
                                     $sql = str_replace('#tz', $belegart['tabellenzusatz'], $sql);
 
-echo $sql;
+
                                     $reports = $db->direct($sql);
 
 
@@ -89,34 +89,34 @@ echo $sql;
                                         if ($mail_txt != "") {
 
                                             $mail = new PHPMailer();
-        
+
                                             $mail->SMTPDebug = 3;                               // Enable verbose debug output
                                             $mail->CharSet = "utf-8";
-                                
+
                                             $mail->isSMTP();                                      // Set mailer to use SMTP
-                                            $mail->Host = $db->singleValue('select getSetup("cmp_mail","SMTP_HOST") v',[],'v');
+                                            $mail->Host = $db->singleValue('select getSetup("cmp_mail","SMTP_HOST") v', [], 'v');
                                             // $this->getCMPSetup('cmp_mail','SMTP_HOST');  // Specify main and backup SMTP servers
                                             $mail->SMTPAuth = true;                               // Enable SMTP authentication
-                                            $mail->Username =  $db->singleValue('select getSetup("cmp_mail","SMTP_USER") v',[],'v');
+                                            $mail->Username =  $db->singleValue('select getSetup("cmp_mail","SMTP_USER") v', [], 'v');
                                             // $this->getCMPSetup('cmp_mail','SMTP_USER');             // SMTP username
-                                            $mail->Password =  $db->singleValue('select getSetup("cmp_mail","SMTP_PASS") v',[],'v');
+                                            $mail->Password =  $db->singleValue('select getSetup("cmp_mail","SMTP_PASS") v', [], 'v');
                                             // $this->getCMPSetup('cmp_mail','SMTP_PASS');                           // SMTP password
-                                            $secure =  $db->singleValue('select getSetup("cmp_mail","SMTP_SECURE") v',[],'v');
+                                            $secure =  $db->singleValue('select getSetup("cmp_mail","SMTP_SECURE") v', [], 'v');
                                             // $this->getCMPSetup('cmp_mail','SMTP_SECURE');
-                                            if ($secure==''){
+                                            if ($secure == '') {
                                                 $mail->SMTPSecure = false;                            // Enable TLS encryption, `ssl` also accepted
-                                            }else{
+                                            } else {
                                                 $mail->SMTPSecure = $secure;                            // Enable TLS encryption, `ssl` also accepted
                                             }
                                             $mail->Port = 587;                                    // TCP port to connect to
-                                
-                                            if  ($db->singleValue('select getSetup("cmp_mail","SMTP_SECURE") v',[],'v')=='1'){
-                                            //($this->getCMPSetup('cmp_mail','SMTP_NO_AUTOTLS')=='1'){
+
+                                            if ($db->singleValue('select getSetup("cmp_mail","SMTP_SECURE") v', [], 'v') == '1') {
+                                                //($this->getCMPSetup('cmp_mail','SMTP_NO_AUTOTLS')=='1'){
                                                 $mail->SMTPAutoTLS = false;
                                             }
-                                
-                                            if  ($db->singleValue('select getSetup("cmp_mail","SMTP_NO_CERT_CHECK") v',[],'v')=='1'){
-                                            //if ($this->getCMPSetup('cmp_mail','SMTP_NO_CERT_CHECK')=='1'){
+
+                                            if ($db->singleValue('select getSetup("cmp_mail","SMTP_NO_CERT_CHECK") v', [], 'v') == '1') {
+                                                //if ($this->getCMPSetup('cmp_mail','SMTP_NO_CERT_CHECK')=='1'){
                                                 $mail->SMTPOptions = array(
                                                     'ssl' => array(
                                                         'verify_peer' => false,
@@ -125,7 +125,7 @@ echo $sql;
                                                     )
                                                 );
                                             }
-                                
+
 
                                             if (!isset($config['pdf_attachment'])) {
                                                 $config['pdf_attachment'] = 1;
@@ -142,7 +142,7 @@ echo $sql;
                                             }
 
 
-//echo 1;
+                                            //echo 1;
 
                                             $mail->setFrom($config['mail_from'], $config['mail_from_name']);
 
@@ -175,20 +175,20 @@ echo $sql;
                                             if (
                                                 ($config['pdf_attachment'] == 1) && ($report_item['pdf_attachment'] == 1)
                                             ) {
-                                               
+
                                                 \DomPDFRenderingHelper::render([
-                                                    'template'=>'blg_template_2021',
-'tablename'=>'view_blg_list_fr',
-                                                    'id'=>$report_item['belegnummer']
-                                                ],[
-                                                    'save'=>App::get('tempPath') . '/blg_'.$report_item['belegnummer'].'.pdf',
-'tablename'=>'view_blg_list_fr'
+                                                    'template' => 'blg_template_2021',
+                                                    'tablename' => 'view_blg_list_fr',
+                                                    'id' => $report_item['belegnummer']
+                                                ], [
+                                                    'save' => App::get('tempPath') . '/blg_' . $report_item['belegnummer'] . '.pdf',
+                                                    'tablename' => 'view_blg_list_fr'
                                                 ]);
-if (file_exists(App::get('tempPath') . '/blg_'.$report_item['belegnummer'].'.pdf')){
-$mail->addAttachment(App::get('tempPath') . '/blg_'.$report_item['belegnummer'].'.pdf', 'BN-' . $report_item['belegnummer'] . '.pdf');
-}else{
-exit();
-}
+                                                if (file_exists(App::get('tempPath') . '/blg_' . $report_item['belegnummer'] . '.pdf')) {
+                                                    $mail->addAttachment(App::get('tempPath') . '/blg_' . $report_item['belegnummer'] . '.pdf', 'BN-' . $report_item['belegnummer'] . '.pdf');
+                                                } else {
+                                                    exit();
+                                                }
                                                 /*
                                                 include __REAL_PATH__ . '/cmp/cmp_belege/page/report/report.php';
                                                 $fn = explode('-', $report_item['belegnummer']);
