@@ -18,12 +18,10 @@ class Route implements IRoute
 
 
 
-
             if ($db->singleRow('select id from cmp_mail_calls where id>date_add(now(),interval -3 minute)')) {
                 $db->direct('insert into cmp_mail_calls (id,started,data) values (now(),0,{data}) ', array('data' => print_r($_REQUEST, true)));
             } else {
                 $db->direct('insert into cmp_mail_calls (id,started,data) values (now(),1,{data}) ', array('data' => print_r($_REQUEST, true)));
-
                 $bezuege = $db->direct('select base_table,blg_table from bezug_config', array(), 'base_table');
                 $belegarten = $db->direct('select id,name,tabellenzusatz,adress_bezug from blg_config');
                 foreach ($belegarten as $belegart) {
@@ -72,8 +70,10 @@ class Route implements IRoute
             limit 10
             ';
                                     $sql = str_replace('#bez', $bezuege[$belegart['adress_bezug']]['blg_table'], $sql);
+
                                     $sql = str_replace('#tz', $belegart['tabellenzusatz'], $sql);
 
+echo $sql;
                                     $reports = $db->direct($sql);
 
 
@@ -142,7 +142,7 @@ class Route implements IRoute
                                             }
 
 
-
+//echo 1;
 
                                             $mail->setFrom($config['mail_from'], $config['mail_from_name']);
 
@@ -176,12 +176,19 @@ class Route implements IRoute
                                                 ($config['pdf_attachment'] == 1) && ($report_item['pdf_attachment'] == 1)
                                             ) {
                                                
-                                                DomPDFRenderingHelper::render([
+                                                \DomPDFRenderingHelper::render([
                                                     'template'=>'blg_template_2021',
-                                                    'id'=>1275127
+'tablename'=>'view_blg_list_fr',
+                                                    'id'=>$report_item['belegnummer']
                                                 ],[
-                                                    'save'=>App::getTempPath() . '/blg_template_2021.pdf'
+                                                    'save'=>App::get('tempPath') . '/blg_'.$report_item['belegnummer'].'.pdf',
+'tablename'=>'view_blg_list_fr'
                                                 ]);
+if (file_exists(App::get('tempPath') . '/blg_'.$report_item['belegnummer'].'.pdf')){
+$mail->addAttachment(App::get('tempPath') . '/blg_'.$report_item['belegnummer'].'.pdf', 'BN-' . $report_item['belegnummer'] . '.pdf');
+}else{
+exit();
+}
                                                 /*
                                                 include __REAL_PATH__ . '/cmp/cmp_belege/page/report/report.php';
                                                 $fn = explode('-', $report_item['belegnummer']);
