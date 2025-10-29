@@ -7,7 +7,7 @@ use Tualo\Office\Basic\Route as BasicRoute;
 use Tualo\Office\Basic\IRoute;
 use PHPMailer\PHPMailer\PHPMailer;
 
-class Route implements IRoute
+class Route extends \Tualo\Office\Basic\RouteWrapper
 {
     public static function register()
     {
