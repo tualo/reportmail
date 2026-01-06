@@ -8,7 +8,7 @@ use Tualo\Office\Basic\IRoute;
 use Tualo\Office\MicrosoftMail\MSGraphMail;
 use Tualo\Office\RemoteBrowser\RemotePDF;
 
-class MSGraph extends \Tualo\Office\Basic\RouteWrapper
+class MSGraph /*extends \Tualo\Office\Basic\RouteWrapper*/
 {
     public static function register()
     {
