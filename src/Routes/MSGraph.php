@@ -18,6 +18,104 @@ class MSGraph implements IRoute /*extends \Tualo\Office\Basic\RouteWrapper*/
 
         //echo 123;
 
+        BasicRoute::add('/reportmail/project_x', function ($matches) {
+            $db = App::get('session')->getDB();
+            $local_file_name = '';
+            if ($db->singleRow('select id from cmp_mail_calls where id>date_add(now(),interval -3 minute)')) {
+                //                $db->direct('insert into cmp_mail_calls (id,started,data) values (now(),0,{data}) ', array('data' => print_r($_REQUEST, true)));
+            } else {
+                $db->direct('insert into cmp_mail_calls (id,started,data) values (now(),1,{data}) ', array('data' => print_r($_REQUEST, true)));
+
+                $sql = '
+
+                select 
+projectmanagement.target_date,
+projectmanagement.project_id,
+projectmanagement.name,
+projectmanagement.client_order_id,
+projectmanagement_ansprechpartner.ansprechpartner_id,
+projectmanagement_ansprechpartner.anrede,
+projectmanagement_ansprechpartner.nachname,
+projectmanagement_ansprechpartner.mail,
+uebersetzer.vorname uebersetzer_vorname,
+uebersetzer.vorname uebersetzer_nachname,
+projectmanagement_ansprechpartner_mailed.sendtime
+ from 
+    projectmanagement 
+    join view_readtable_projectmanagement_ansprechpartner projectmanagement_ansprechpartner 
+        on projectmanagement_ansprechpartner.project_id = projectmanagement.project_id
+    join uebersetzer
+        on uebersetzer.kundennummer = projectmanagement.uebersetzer
+
+    left join projectmanagement_ansprechpartner_mailed 
+    on (
+        projectmanagement_ansprechpartner_mailed.project_id,
+        projectmanagement_ansprechpartner_mailed.ansprechpartner_id,
+        type
+    ) = (
+        projectmanagement.project_id,
+        projectmanagement_ansprechpartner.ansprechpartner_id,
+        "mission_report"
+    )
+where 
+    state = "30005"
+    and projectmanagement.projectmanagement_schema = "7b5ccd29-4d68-11ee-bb38-002590c72640"
+    and projectmanagement_ansprechpartner.aktiv=1 and projectmanagement_ansprechpartner.mail<>""
+    and target_date >= curdate()
+
+having sendtime is null
+                
+                ';
+
+                $liste = $db->direct($sql);
+                foreach ($liste as $item) {
+
+
+                    $mail = MSGraphMail::get();
+                    // $mail->setFrom($config['mail_from'], $config['mail_from_name']);
+                    // $mails = explode(';', $report_item['mailto']);
+                    // $mail->addReplyTo($config['mail_reply'], $config['mail_reply_name']);
+                    $mail->setSubject("Terminzusage - Projekt " . $item['project_name'] . $item['client_order_id']);
+
+                    if (($item['anrede'] == 'Herr')) {
+                        $mail->addAddress($item['mail'], $item['vorname'] . ' ' . $item['nachname']);
+                    } else {
+                        continue;
+                    }
+                    $mail_txt = 'Sehr geehrte {anrede} {nachname},
+ 
+                    hiermit bestätigen wir Ihnen den Dolmetschereinsatz am {target_date}.
+                    Als Dolmetscher erscheint für Sie Herr/Frau {uebersetzer_vorname} {uebersetzer_nachname}.
+                    
+                    Bei Rückfragen stehe ich Ihnen selbstverständlich gern zur Verfügung.
+                    Mit freundlichen Grüßen /With kind regards
+                    Ihr World contact Team
+
+                    WORLD Contact Übersetzungsbüro GmbH
+                    Büro Gera, Gagarinstraße 15, 07545 Gera
+                    Tel. +49 365 2900774
+                    Fax. +49 365 2900775
+                    Email : info@world-contact.de
+                    Internetseite: www.world-contact.de
+                ';
+                    foreach ($item as $key => $val) {
+                        $mail_txt = str_replace('{' . $key . '}', $val, $mail_txt);
+                    }
+                    $mail->addAddress('thomas.hoffmann@tualo.de');
+
+                    $mail->setBody($mail_txt);
+                    $mail->send();
+                    $sql = 'insert into projectmanagement_ansprechpartner_mailed (
+                    project_id,
+                    ansprechpartner_id,
+                    type,
+                    ) values (
+                     {project_id},{ansprechpartner_id},"mission_report",now()) on duplicate key update project_id = values(project_id)';
+                    $db->execute_with_hash($sql, $item);
+                }
+            }
+        }, array('get'), false);
+
         BasicRoute::add('/reportmail/msgraph', function ($matches) {
             $db = App::get('session')->getDB();
 
